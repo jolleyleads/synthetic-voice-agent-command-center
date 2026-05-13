@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Synthetic Voice Agent Command Center</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <main class="container">
+        <section class="hero">
+            <h1>Synthetic Voice Agent Command Center</h1>
+            <p>Alexa-style AI assistant for jobs, workflows, email intelligence, automation, and AI Ops control.</p>
+        </section>
+
+        <section class="card">
+            <h2>Voice Agent</h2>
+            <button onclick="startListening()">??? Talk to Agent</button>
+            <button onclick="sendText()">Send Text</button>
+
+            <textarea id="userInput" placeholder="Say or type: Find me remote machine learning jobs"></textarea>
+
+            <h3>Agent Reply</h3>
+            <div id="replyBox">Waiting for command...</div>
+        </section>
+
+        <section class="card">
+            <h2>Example Commands</h2>
+            <ul>
+                <li>Find me remote machine learning jobs</li>
+                <li>Search AI automation jobs</li>
+                <li>Check my workflow logs</li>
+                <li>Analyze this message for spam</li>
+                <li>What can my AI Ops Command Center do?</li>
+            </ul>
+        </section>
+    </main>
+
+<script>
+const replyBox = document.getElementById("replyBox");
+const userInput = document.getElementById("userInput");
+
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    speechSynthesis.speak(utterance);
+}
+
+function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Your browser does not support speech recognition. Use Chrome.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        sendToAgent(transcript);
+    };
+}
+
+function sendText() {
+    sendToAgent(userInput.value);
+}
+
+function sendToAgent(message) {
+    replyBox.innerHTML = "Thinking...";
+
+    fetch("/api/agent", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        replyBox.innerHTML = data.reply;
+        speak(data.reply);
+    })
+    .catch(error => {
+        replyBox.innerHTML = "Error connecting to agent.";
+        console.error(error);
+    });
+}
+</script>
+
+</body>
+</html>
